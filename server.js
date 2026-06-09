@@ -84,40 +84,20 @@ app.post("/dink", async (req, res) => {
     }
 });
 
-        const text = await response.text();
-
-    console.log("Discord Status:", response.status);
-    console.log("Discord Response:", text);
-    console.log("Payload:", JSON.stringify(payload, null, 2));
-
-        res.status(200).json({
-            success: true,
-            discordStatus: response.status,
-            discordResponse: text
-        });
-    } catch (err) {
-        console.error(err);
-
-        res.status(500).json({
-            success: false,
-            error: err.message
-        });
-    }
-});
-
 app.get("/health", (_, res) => {
     res.json({
         status: "ok"
     });
 });
 
-const PORT = process.env.PORT || 3000;
-
 app.get("/", (_, res) => {
     res.json({
         status: "online"
     });
 });
+
+const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
     console.log(`Listening on ${PORT}`);
 });
