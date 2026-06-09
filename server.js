@@ -78,6 +78,11 @@ app.get("/health", (_, res) => {
 
 const PORT = process.env.PORT || 3000;
 
+app.get("/", (_, res) => {
+    res.json({
+        status: "online"
+    });
+});
 app.listen(PORT, () => {
     console.log(`Listening on ${PORT}`);
 });
