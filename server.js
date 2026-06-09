@@ -2,6 +2,10 @@ import express from "express";
 
 const app = express();
 
+console.log("SERVER STARTING");
+console.log("PORT =", process.env.PORT);
+console.log("WEBHOOK_URL =", !!process.env.WEBHOOK_URL);
+
 app.use(express.json({ limit: "10mb" }));
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
