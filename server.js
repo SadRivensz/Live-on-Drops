@@ -43,6 +43,8 @@ app.post("/dink", async (req, res) => {
             });
         }
 
+        console.log("BODY RECEIVED:");
+        console.log(JSON.stringify(req.body, null, 2));
         const payload = sanitize(req.body);
 
         const response = await fetch(WEBHOOK_URL, {
