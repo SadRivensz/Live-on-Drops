@@ -1,6 +1,8 @@
 import express from "express";
+import multer from "multer";
 
 const app = express();
+const upload = multer();
 
 console.log("SERVER STARTING");
 console.log("PORT =", process.env.PORT);
@@ -34,7 +36,7 @@ function sanitize(payload) {
     return copy;
 }
 
-app.post("/dink", async (req, res) => {
+app.post("/dink", upload.any(), async (req, res) => {
     try {
         const key = req.headers["x-api-key"];
 
@@ -46,10 +48,16 @@ app.post("/dink", async (req, res) => {
 
         console.log("========== DINK REQUEST ==========");
         console.log("Content-Type:", req.headers["content-type"]);
+
         console.log("Body:");
         console.log(JSON.stringify(req.body, null, 2));
+
+        console.log("Files:");
+        console.log(JSON.stringify(req.files, null, 2));
+
         console.log("Query:");
         console.log(JSON.stringify(req.query, null, 2));
+
         console.log("==================================");
 
         const payload = sanitize(req.body);
