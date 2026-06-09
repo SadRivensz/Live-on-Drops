@@ -18,22 +18,14 @@ if (!WEBHOOK_URL) {
     throw new Error("WEBHOOK_URL not configured");
 }
 
-function sanitize(payload) {
-    const copy = structuredClone(payload);
-
-    if (typeof copy.content === "string") {
-        copy.content = copy.content
-            .replace(/@everyone/gi, "@ everyone")
-            .replace(/@here/gi, "@ here");
+function sanitizeContent(text) {
+    if (typeof text !== "string") {
+        return text;
     }
 
-    copy.allowed_mentions = {
-        parse: [],
-        users: [],
-        roles: []
-    };
-
-    return copy;
+    return text
+        .replace(/@everyone/gi, "@ everyone")
+        .replace(/@here/gi, "@ here");
 }
 
 app.post("/dink", upload.any(), async (req, res) => {
@@ -48,36 +40,90 @@ app.post("/dink", upload.any(), async (req, res) => {
 
         console.log("========== DINK REQUEST ==========");
         console.log("Content-Type:", req.headers["content-type"]);
-
         console.log("Body:");
         console.log(JSON.stringify(req.body, null, 2));
-
-        console.log("Files:");
-        console.log(JSON.stringify(req.files, null, 2));
-
-        console.log("Query:");
-        console.log(JSON.stringify(req.query, null, 2));
-
+        console.log("Files:", req.files?.length ?? 0);
         console.log("==================================");
 
-        const payload = sanitize(req.body);
+        const form = new FormData();
+
+        // Caso o Dink envie payload_json
+        if (req.body.payload_json) {
+            try {
+                const payload = JSON.parse(req.body.payload_json);
+
+                if (payload.content) {
+                    payload.content = sanitizeContent(payload.content);
+                }
+
+                payload.allowed_mentions = {
+                    parse: [],
+                    users: [],
+                    roles: []
+                };
+
+                form.append(
+                    "payload_json",
+                    JSON.stringify(payload)
+                );
+            } catch (err) {
+                console.error("Failed to parse payload_json:", err);
+
+                form.append(
+                    "payload_json",
+                    req.body.payload_json
+                );
+            }
+        } else {
+            const payload = structuredClone(req.body);
+
+            if (payload.content) {
+                payload.content = sanitizeContent(payload.content);
+            }
+
+            payload.allowed_mentions = {
+                parse: [],
+                users: [],
+                roles: []
+            };
+
+            form.append(
+                "payload_json",
+                JSON.stringify(payload)
+            );
+        }
+
+        // Reanexa screenshots/imagens
+        for (const file of req.files ?? []) {
+            const blob = new Blob(
+                [new Uint8Array(file.buffer)],
+                {
+                    type: file.mimetype
+                }
+            );
+
+            form.append(
+                file.fieldname,
+                blob,
+                file.originalname
+            );
+
+            console.log(
+                `Attached file: ${file.originalname}`
+            );
+        }
 
         const response = await fetch(WEBHOOK_URL, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
+            body: form
         });
 
         const text = await response.text();
 
         console.log("Discord Status:", response.status);
         console.log("Discord Response:", text);
-        console.log("Payload Sent:");
-        console.log(JSON.stringify(payload, null, 2));
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             discordStatus: response.status,
             discordResponse: text
@@ -85,7 +131,7 @@ app.post("/dink", upload.any(), async (req, res) => {
     } catch (err) {
         console.error(err);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             error: err.message
         });
