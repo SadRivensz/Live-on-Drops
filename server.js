@@ -7,6 +7,7 @@ console.log("PORT =", process.env.PORT);
 console.log("WEBHOOK_URL =", !!process.env.WEBHOOK_URL);
 
 app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
 const API_KEY = process.env.API_KEY;
@@ -43,8 +44,14 @@ app.post("/dink", async (req, res) => {
             });
         }
 
-        console.log("BODY RECEIVED:");
+        console.log("========== DINK REQUEST ==========");
+        console.log("Content-Type:", req.headers["content-type"]);
+        console.log("Body:");
         console.log(JSON.stringify(req.body, null, 2));
+        console.log("Query:");
+        console.log(JSON.stringify(req.query, null, 2));
+        console.log("==================================");
+
         const payload = sanitize(req.body);
 
         const response = await fetch(WEBHOOK_URL, {
@@ -54,6 +61,28 @@ app.post("/dink", async (req, res) => {
             },
             body: JSON.stringify(payload)
         });
+
+        const text = await response.text();
+
+        console.log("Discord Status:", response.status);
+        console.log("Discord Response:", text);
+        console.log("Payload Sent:");
+        console.log(JSON.stringify(payload, null, 2));
+
+        res.status(200).json({
+            success: true,
+            discordStatus: response.status,
+            discordResponse: text
+        });
+    } catch (err) {
+        console.error(err);
+
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
 
         const text = await response.text();
 
