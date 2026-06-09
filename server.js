@@ -55,9 +55,9 @@ app.post("/dink", async (req, res) => {
 
         const text = await response.text();
 
-        console.log(
-            `[${new Date().toISOString()}] Forwarded -> ${response.status}`
-        );
+    console.log("Discord Status:", response.status);
+    console.log("Discord Response:", text);
+    console.log("Payload:", JSON.stringify(payload, null, 2));
 
         res.status(200).json({
             success: true,
